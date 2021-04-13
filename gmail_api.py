@@ -20,44 +20,186 @@ from email.mime.multipart import MIMEMultipart
 from mimetypes import guess_type as guess_mime_type
 from bs4 import BeautifulSoup
 
+
+"""
+    PIN POSITIONS:
+    (1) 7 == FALL
+    (2) 8 == FLIP
+    (3) 9 == BEND
+    (4) 10 == DRAG
+    (5) 11 == ROTATE
+
+"""
+
+
 """
 Arduino PyFirmata Code
+Main Function initialises the Arduino board
 """
-board = pyfirmata.Arduino('/dev/cu.usbmodem1201')
-it = pyfirmata.util.Iterator(board)
-it.start()
-SERVO_MOTOR = 9
-END = 180
-servo_pin = board.get_pin('d:9:s')
-#servo_pin.write(0)
-#time.sleep(2)
-board.servo_config(SERVO_MOTOR, 544,2400,0)
-#servo_pin.write(90)
-
-"""
-for i in range(0, END):
-    servo_pin.write(i)
-    time.sleep(.015)
-    #time.sleep(.5)
-
-for j in range(END, 0, -1):
-    servo_pin.write(j)
-    time.sleep(.015)
-    #time.sleep(.5)
-"""
-
-"""
-while True:
-    board.digital[9].write(1)
-    time.sleep(3)
-    board.digital[13].write(0)
-    time.sleep(3)
-"""
+def main():
+    
+    board = pyfirmata.Arduino('COM5')
+    it = pyfirmata.util.Iterator(board)
+    it.start()
+    SERVO_MOTOR = 9
+    END = 180
 
 
-# Request all access (permission to read/send/receive emails, manage the inbox, and more)
-SCOPES = ['https://mail.google.com/']
-our_email = '24parasjain@gmail.com'
+    servo_pin1 = board.get_pin('d:7:s')  # FALL
+    servo_pin2 = board.get_pin('d:8:s')  # FLIP
+    servo_pin3 = board.get_pin('d:9:s')  # BEND
+    servo_pin4 = board.get_pin('d:10:s') # DRAG
+    servo_pin5 = board.get_pin('d:11:s') # ROTATE
+    #servo_pin.write(0)
+    #time.sleep(2)
+    board.servo_config(SERVO_MOTOR, 544,2400,0)
+    #servo_pin.write(90)
+
+    """
+    for i in range(0, END):
+        servo_pin.write(i)
+        time.sleep(.015)
+        #time.sleep(.5)
+
+    for j in range(END, 0, -1):
+        servo_pin.write(j)
+        time.sleep(.015)
+        #time.sleep(.5)
+    """
+
+    """
+    while True:
+        board.digital[9].write(1)
+        time.sleep(3)
+        board.digital[13].write(0)
+        time.sleep(3)
+    """
+    # Request all access (permission to read/send/receive emails, manage the inbox, and more)
+    SCOPES = ['https://mail.google.com/']
+    our_email = 'notiwall@2021.gmail.com'
+    gmail_authenticate()
+
+
+    # =============== FALL MOTION, IMP MESSAGE ======================
+    imp_mssg = search_messages(service, 'from:aryan15134@iiitd.ac.in OR from:saini.aaaryan@gmail.com')
+    imp_txt = service.users().messages().get(userId='me', id=imp_mssg[0]['id']).execute()
+    imp_payload = imp_txt['payload']
+    imp_headers = imp_payload['headers']
+    for d in imp_headers:
+        if d['name'] == 'Subject':
+            imp_subject = d['value']
+            print("Important Mail Subject: ", imp_subject)
+        if d['name'] == 'From':
+            imp_sender = d['value']
+            print("Important Mail Sender: ", imp_sender)
+            #print(sender)
+    imp_parts = payload.get('parts')[0]
+    print("FALL MOVEMENT")
+    servo_pin1.write(0)
+    # ================ FALL MOTION, IMP MESSAGE =======================
+
+    # ================ FLIP MOTION, CANCELED EVENT ====================
+    cancel_mssg = search_messages(service)
+    cancel_txt = service.users().messages().get(userId='me', id=cancel_mssg[0]['id']).execute()
+    cancel_payload = cancel_txt['payload']
+    cancel_headers = cancel_payload['headers']
+    for d in cancel_headers:
+        if d['name'] == 'Subject':
+            cancel_subject = d['value']
+            print("Canceled Event Subject: ", cancel_subject)
+        if d['name'] == 'From':
+            cancel_sender = d['value']
+            #print("Important Mail Sender: ", imp_sender)
+            print("Sender is : ", cancel_sender)
+    imp_parts = cancel_payload.get('parts')[0]
+    print("FLIP MOVEMENT")
+    servo_pin2.write(180)
+    # ================ FLIP MOTION, CANCELED EVENT ==================== 
+
+    # ================= ROTATE MOTION, UPCOMING MEETING TIME ==========
+
+    meeting_mssg = search_messages(service)
+
+
+    # ================= ROTATE MOTION, UPCOMING MEETING TIME ==========
+
+
+    mssgs = search_messages(service, 'from:calendar-notification@google.com OR from:aryan15134@iiitd.ac.in OR from:saini.aaaryan@gmail.com OR from:paras15154@iiitd.ac.in')
+    
+    
+
+    print("mssg[0] is: ", end=" ")
+    print(mssgs[0])
+    
+
+
+    # ============= BEND MOTION, LABEL MESSAGE ========================
+    
+    label_msg = search_messages(service, 'label:Label1')
+    if label_msg is not None:
+        print("label_msg[0] is: ", label_msg[0])
+        label_txt = service.users().messages().get(userId='me', id=label_msg[0]['id']).execute()
+        label_payload = label_txt['payload']
+        label_headers = label_payload['headers']
+        for p in label_headers:
+            if p['name'] == 'Subject':
+                label_subject = p['value']
+                print("Subject of labelled email is: ", label_subject)
+            if p['name'] == 'From':
+                label_sender = p['value']
+                print("Sender of labelled email is: ", label_sender)
+        servo_pin3.write(180)
+    # =============== BEND MESSAGE =======================
+
+    txt = service.users().messages().get(userId='me', id=mssgs[0]['id']).execute()
+    payload = txt['payload']
+    headers = payload['headers']
+    for d in headers:
+        if d['name'] == 'Subject':
+            subject = d['value']
+            print("Subject: ", subject)
+        if d['name'] == 'From':
+            sender = d['value']
+            print("Sender: ", sender)
+            #print(sender)
+    parts = payload.get('parts')[0]
+ 
+    if 'Canceled' in subject:
+        # FLIP Movement
+        print("Meeting has been Canceled")
+        servo_pin2.write(180)
+
+     # FALL Movement
+    if 'paras15154@iiitd.ac.in' in sender :
+        print("Received email from sender ", sender)
+        print("FALL MOVEMENT")
+        servo_pin1.write(0)
+
+    if 'Notification' in subject:
+        # ROTATE movement
+        print("Received Meeting Reminder for 5 min")
+        for i in range(0,30):
+            servo_pin5.write(17)
+            time.sleep(0.0467)
+            servo_pin.write(20)
+            time.sleep(10)
+
+    if 'Invitation' in subject:
+        print("Received Meeting Invitation")
+        subject = subject.split()
+        #print(subject)
+        for i in range(0, len(subject)):
+            if('pm' in subject[i]):
+                t1 = i
+                #print(t1)
+                break
+        meeting_time = (subject[t1].split('pm'))[0]
+        print(meeting_time)
+
+
+
+
+
 
 def gmail_authenticate():
     creds = None
@@ -147,10 +289,12 @@ def search_messages(service, query):
     return messages
 
 
-mssgs = search_messages(service, 'from:calendar-notification@google.com OR from:aryan15134@iiitd.ac.in OR from:saini.aaaryan@gmail.com')
+"""
+
+#mssgs = search_messages(service, 'from:calendar-notification@google.com OR from:aryan15134@iiitd.ac.in OR from:saini.aaaryan@gmail.com OR from:paras15154@iiitd.ac.in')
 
 # the below is for rotation
-mssgs = search_messages(service, 'from:calendar-notification@google.com')
+#mssgs = search_messages(service, 'from:calendar-notification@google.com')
 
 #print(mssgs)
 #print("type: ", mssgs)
@@ -201,6 +345,8 @@ if 'Notification' in subject:
         time.sleep(0.0467)
         servo_pin.write(20)
         time.sleep(10)
+"""
+
 
 """
 for msg in mssgs:
@@ -242,3 +388,6 @@ for msg in mssgs:
         pass
 """
 
+if __name__ == '__main__':
+    main()
+   
