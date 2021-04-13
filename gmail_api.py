@@ -93,13 +93,14 @@ def main():
             imp_sender = d['value']
             print("Important Mail Sender: ", imp_sender)
             #print(sender)
-    imp_parts = payload.get('parts')[0]
+    imp_parts = imp_payload.get('parts')[0]
     print("FALL MOVEMENT")
+    print("============================================================")
     servo_pin1.write(0)
     # ================ FALL MOTION, IMP MESSAGE =======================
 
     # ================ FLIP MOTION, CANCELED EVENT ====================
-    cancel_mssg = search_messages(service)
+    cancel_mssg = search_messages(service, 'subject: Canceled event')
     cancel_txt = service.users().messages().get(userId='me', id=cancel_mssg[0]['id']).execute()
     cancel_payload = cancel_txt['payload']
     cancel_headers = cancel_payload['headers']
@@ -111,27 +112,49 @@ def main():
             cancel_sender = d['value']
             #print("Important Mail Sender: ", imp_sender)
             print("Sender is : ", cancel_sender)
-    imp_parts = cancel_payload.get('parts')[0]
+    cancel_parts = cancel_payload.get('parts')[0]
     print("FLIP MOVEMENT")
+    print("============================================================")
     servo_pin2.write(180)
     # ================ FLIP MOTION, CANCELED EVENT ==================== 
 
     # ================= ROTATE MOTION, UPCOMING MEETING TIME ==========
-
-    meeting_mssg = search_messages(service)
+    meeting_mssg = search_messages(service, 'subject: Invitation')
+    meeting_txt = service.users().messages().get(userId='me', id=meeting_mssg[0]['id']).execute()
+    meeting_payload = meeting_txt['payload']
+    meeting_headers = meeting_payload['headers']
+    for d in meeting_headers:
+        if d['name'] == 'Subject':
+            meeting_subject = d['value']
+            print("Meeting Subject: ", meeting_subject)
+        if d['name'] == 'From':
+            meeting_sender = d['value']
+            #print("Important Mail Sender: ", imp_sender)
+            print("Meeting Invitation Sender is : ", meeting_sender)
+    meeting_parts = cancel_payload.get('parts')[0]
+    print("ROTATION MOVEMENT")
+    meeting_subject = meeting_subject.split()
+    for i in range(0, len(meeting_subject)):
+        if('pm' in meeting_subject[i]):
+            meeting_index = i
+            #print(t1)
+            break
+    meeting_time = (meeting_subject[meeting_index].split('pm'))[0]
+    print(meeting_time)
+    #print(meeting_time.split(':'))
+    meeting_time = meeting_time.split(":")
+    meeting_hours = int(meeting_time[0])
+    meeting_min = int(meeting_time[1])
+    print("Hours: ", meeting_hours, " Min: ", meeting_min)
+    print("============================================================")
+    #servo_pin5.write(180)
 
 
     # ================= ROTATE MOTION, UPCOMING MEETING TIME ==========
 
 
-    mssgs = search_messages(service, 'from:calendar-notification@google.com OR from:aryan15134@iiitd.ac.in OR from:saini.aaaryan@gmail.com OR from:paras15154@iiitd.ac.in')
+    #mssgs = search_messages(service, 'from:calendar-notification@google.com OR from:aryan15134@iiitd.ac.in OR from:saini.aaaryan@gmail.com OR from:paras15154@iiitd.ac.in')
     
-    
-
-    print("mssg[0] is: ", end=" ")
-    print(mssgs[0])
-    
-
 
     # ============= BEND MOTION, LABEL MESSAGE ========================
     
@@ -148,9 +171,12 @@ def main():
             if p['name'] == 'From':
                 label_sender = p['value']
                 print("Sender of labelled email is: ", label_sender)
+        print("BEND Movement");
+        print("============================================================")
         servo_pin3.write(180)
-    # =============== BEND MESSAGE =======================
+    # =============== BEND MOTION, LABEL MESSAGE =======================
 
+    """
     txt = service.users().messages().get(userId='me', id=mssgs[0]['id']).execute()
     payload = txt['payload']
     headers = payload['headers']
@@ -196,7 +222,7 @@ def main():
         meeting_time = (subject[t1].split('pm'))[0]
         print(meeting_time)
 
-
+    """
 
 
 
@@ -390,4 +416,3 @@ for msg in mssgs:
 
 if __name__ == '__main__':
     main()
-   
