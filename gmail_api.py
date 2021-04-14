@@ -19,6 +19,8 @@ from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 from mimetypes import guess_type as guess_mime_type
 from bs4 import BeautifulSoup
+from datetime import date
+from PyMata.pymata import PyMata
 
 
 """
@@ -43,6 +45,24 @@ def main():
     it.start()
     SERVO_MOTOR = 9
     END = 180
+
+    # create a PyMata instance
+    firmata = PyMata("COM5")
+    # configure the stepper. The pins used are 8,9,10,11 and specify 32 steps per revolution
+    STEPS_PER_REV = 32
+    GEAR_RED = 64
+    STEPS_PER_OUT_REV = STEPS_PER_REV * GEAR_RED
+    firmata.stepper_config(STEPS_PER_REV, [8, 9, 10, 11])
+    # allow time for config to complete
+    time.sleep(.5)
+    # ask Arduino to return the stepper library version number to PyMata
+    firmata.stepper_request_library_version()
+    # allow time for command and reply to go across the serial link
+    time.sleep(.5)
+    print("Stepper Library Version",)
+    print(firmata.get_stepper_version())
+
+
 
 
     servo_pin1 = board.get_pin('d:7:s')  # FALL
@@ -148,6 +168,12 @@ def main():
     print("Hours: ", meeting_hours, " Min: ", meeting_min)
     print("============================================================")
     #servo_pin5.write(180)
+    StepsRequired  =  STEPS_PER_OUT_REV/24
+    # move motor to steps forward at a speed of 700
+    firmata.stepper_step(700, StepsRequired)
+    time.sleep(1)
+    # move motor #0 500 steps reverse at a speed of 20
+    #firmata.stepper_step(20, -500)
 
 
     # ================= ROTATE MOTION, UPCOMING MEETING TIME ==========
@@ -175,6 +201,34 @@ def main():
         print("============================================================")
         servo_pin3.write(180)
     # =============== BEND MOTION, LABEL MESSAGE =======================
+
+    # =============== DRAG MOTION, UNREAD MESSAGES for TODAY ===========
+    
+    query_unread="is:unread after:"+str(date.today().day)+'/'+str(date.today().month)+'/'+str(date.today().year)
+    print("Filter we are using is : ", query_unread)
+    unread_msg = search_messages(service, query_unread)
+    count_unread = 1
+    for not_read in unread_msg:
+        not_read_txt = service.users().messages().get(userId='me', id=not_read['id']).execute()
+        not_read_payload = not_read_txt['payload']
+        not_read_headers = not_read_payload['headers']
+        for p in not_read_headers:
+            if p['name'] == 'Subject':
+                not_read_subject = p['value']
+                print("unread message count: ", count_unread)
+                print("Subject of the email is: ", not_read_subject)
+            if p['name'] == 'From':
+                not_read_sender = p['value']
+                print("Sender of labelled email is: ", not_read_sender)
+            print("---------------------------------------")
+            servo_pin4.write(17)
+            time.sleep(0.08)
+            servo_pin4.write(88)
+            count += 1
+        print("DRAG Movement")
+        print("============================================================")
+
+    # =============== DRAG MOTION, UNREAD MESSAGES for TODAY ===========
 
     """
     txt = service.users().messages().get(userId='me', id=mssgs[0]['id']).execute()
